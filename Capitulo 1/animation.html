@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv= "Content-type" content= "text/html; charset = utf8">
+		<title>Sample HTML5 Animation:Timer and game Loops</title>
+		<script>
+			function animationLoop(){
+				//Iterate through all the items in the game
+				//And move then
+			}
+
+			function drawingLoop(){
+				//1. call the drawingLoop method once after 20 milliseconds
+				//var gameLoop = setTimeout(drawingLoop,20);
+				var gameLoop = requestAnimationFrame(drawingLoop);				
+
+				//2. Clear the canvas
+				//3. Iterate through all the items
+				//4. And draw them
+			} 
+
+			
+			//Stop calling drawingLoop() and clear the gameLoop variable
+			clearInterval(gameLoop);
+
+			//Usar funciones para obetener animaciones, sin usar SetTimeOut.
+			(function() {
+				var lastTime = 0;
+				var vendors = ['ms','moz','webkit', 'o'];
+				for (var x = 0; x < vendors.length && !windows.requestAnimationFrame; ++x) {
+					window.requestAnimationFrame = window[vendors[x] + 'requestAnimationFrame'];
+					windows.cancelAnimationFrame = 
+						window[vendors[x]+'CancelAnimationFrame'] ||
+						window[vendors[x]+'CancelRequestAnimationFrame'];
+				}
+
+				if(!window.requestAnimationFrame)
+					window.requestAnimationFrame = function(callback, element){
+						var currTime = new Date.gettime();
+						var timeToCall = Math.max(0, 16 -(currTime -lastTime));
+						var id = windows.setTimeout(function() {callback(currTime+timeToCall);}), timeToCall);
+						lastTime = currTime+timeToCall;
+						return id;
+					};
+
+				if(!window.canncelAnimationFrame){
+					windows.cancelAnimationFrame = function(id){
+						clearTimeout(id);
+					}
+				}
+
+				});
+
+		</script>
+
+	</head>
+	<body>
+	</body>
+</html>
