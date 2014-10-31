@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv= "Content-type" content= "text/html; charset = utf8">
+		<title>Sample HTML5 Audio</title>
+	</head>
+	<body>
+
+	<!--<audio controls = "controls">
+		<source src = "audio/musicSB.mp3" type = "audio/mpeg">
+		<source src = "audio/musicGG.mp3" type = "audio/mpeg">
+		Your Browser does not support HTML5 Audio. Please shift to a newer browser.
+	</audio>
+
+	<script>
+		//Create a new Audio Object
+		var sound = new Audio();
+
+		//Select the source of the sound
+		sound.src = "audio/musicGG.mp3"
+
+		//Play the sound
+		sound.play();
+	</script>
+-->
+	<script>
+		var myAudio = document.createElement('audio');
+		var mp3Support;
+		if(myAudio.canPlayType){
+			//Current canPlayType() return : "", "maybe", or "probably"
+			mp3Support = "" != myAudio.canPlayType('audio/mpeg');
+			oggSupport = "" != myAudio.canPlayType('audio/ogg; codecs = "vorbis"');
+		}else {
+			//The audio tag is not supported
+			mp3Support = false;
+			oggSupport = false;
+		}
+
+		//Check for ogg, then mp3, and finally set soundFileExtn to undefined
+		var soundFileExtn = oggSupport?".ogg":mp3Support?".mp3":undefined;
+
+		/**if(soundFileExtn){
+			var sound = new Audio();
+			//Load sound file with the detected extension
+			sound.src = "audio/bounce"+soundFileExtn;
+			
+			//Play the sound
+			sound.play();
+		}*/
+		if(soundFileExtn){
+			var sound = new Audio();
+			sound.addEventListener('canplaythrough', function(){
+				alert('loaded');
+				sound.play();
+			})
+			//Load sound file with the detected extension
+			sound.src = "audio/bounce"+soundFileExtn;
+		}
+
+
+	</script>
+
+
+	</body>
+</html>
