@@ -1,3 +1,32 @@
+//Set up requestanimationFrame and cancelAnimationFrame for use in the game code
+(function() {
+	var lastTime = 0;
+	var vendors = ['ms', 'moz', 'webkit', 'o'];
+	for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+		window.requestAnimationFrame = window[vendors[x] + 'RequestAnimationFrame'];
+		window.cancelAnimationFrame =
+		window[vendors[x] + 'CancelAnimationFrame'] || window[vendors[x] + 'CancelRequestAnimationFrame'];
+	}
+
+	if (!window.requestAnimationFrame){
+		window.requestAnimationFrame = function(callback, element) {
+			var currTime = new Date().getTime();
+			var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+			var id = window.setTimeout(function() { callback(currTime + timeToCall); },timeToCall);
+			lastTime = currTime + timeToCall;
+			return id;
+		};
+	}
+
+	if(!window.cancelAnimationFrame){
+		window.cancelAnimationFrame=function(id) {
+			clearTimeout(id);
+		}
+	}
+}());
+
+
+
 $(window).load(function() {
 	game.init();
 });
@@ -9,6 +38,7 @@ var game = {
 		//Initialize objects
 		levels.init();
 		loader.init();
+		mouse.init();
 
 
 		//Hide all game layers and display the start screen
@@ -23,7 +53,113 @@ var game = {
 	showLevelScreen:function(){
 		$('.gamelayer').hide();
 		$('#levelselectscreen').show('slow');
-	}
+	},
+
+	mode: "intro",
+	// X & Y Coordinates of the slingshot
+	slingshotX:140,
+	slingshotY:280,
+	start:function(){
+		$('.gamelayer').hide();
+		//Display the game canvas and score
+		$('#gamecanvas').show();
+		$('#scorescreen').show();
+
+		game.mode = "intro";
+		game.offsetLeft = 0;
+		game.ended = false;
+		game.animationFrame = window.requestAnimationFrame(game.animate,game.canvas);
+	},
+	handlePanning:function(){
+		game.offsetLeft++; //Temporary placeholder -- keep panning to the right
+	},
+	animate:function(){
+		// Animate the background
+
+		game.handlePanning();
+
+		// Animate the characters
+
+		// Draw the background with parallaz scrolling
+
+		game.context.drawImage(game.currentLevel.backgroundImage,game.offsetLeft/4,0,640,480,0,0,640,480);
+		game.context.drawImage(game.currentLevel.foregroundImage,game.offsetLeft,0,640,480,0,0,640,480);
+
+		//Draw the slingshot
+		game.context.drawImage(game.slingshotImage,game.slingshotX - game.offsetLeft,game.slingshotY);
+
+		game.context.drawImage(game.slingshotFrontImage,game.slingshotX -  game.offsetLeft, game.slingshotY);
+
+		if(!game.ended){
+			game.animationFrame = window.requestAnimationFrame(game.animate,game.canvas);
+		}
+	},
+	// Maximum panning speed per frame in pixels
+	maxSpeed:3,
+	// minimum and Maximum panning offset
+	minOffset:0,
+	maxOffset:300,
+	// Current panning offset
+	offsetLeft:0,
+	// The game score
+	score:0,
+
+	// Pan the screen to center on newCenter
+	panTo:function(newCenter){
+		if(	Math.abs(newCenter - game.offsetLeft - game.canvas.width/4) >0
+			&& game.offsetLeft <= game.maxOffset && game.offsetLeft >= game.minOffset ){
+
+			var deltaX = Math.round((newCenter - game.offsetLeft -  game.canvas.width/4)/2);
+			if(deltaX && Math.abs(deltaX) > game.maxSpeed){
+				deltaX = game.maxSpeed* Math.abs(deltaX)/(deltaX);
+			}
+			game.offsetLeft +=deltaX;
+		}else{
+			return true;
+		}
+		if(game.offsetLeft < game.minOffset){
+			game.offsetLeft = game.minOffset;
+			return true;
+		}else if(game.offsetLeft > game.maxOffset){
+			game.offsetLeft=game.maxOffset;
+			return true;
+		}
+		return false;
+	},
+
+	handlePanning:function(){
+		if(game.mode == "intro"){
+			if(game.panTo(700)){
+				game.mode = "load-next-hero";
+			}
+		}
+
+		if(game.mode == "wait-for-firing"){
+			if(mouse.dragging){
+				game.panTo(mouse.x + game.offsetLeft);
+			} else {
+				game.panTo(game.slingshotX);
+			}
+		}
+
+		if(game.mode == "load-next-hero"){
+			// TODO:
+			// Check if any villains are alive, if not, end the level (success)
+			// Check if there are any more heroes left to load, if not end the level (failure)
+			game.mode = "wait-for-firing";
+		}
+
+		if(game.mode == "firing"){
+			game.panTo(game.slingshotY);
+		}
+
+		if(game.mode == "fired"){
+			//TODO:
+			//Pan to wherever the hero currently is
+		}
+	},
+
+
 }
 
 
@@ -51,7 +187,7 @@ var levels = {
 		$('#levelselectscreen').html(html);
 
 		//Set the button click event handlers to load level
-		$('#levelselectscreen').click(function(){
+		$('#levelselectscreen input').click(function(){
 			levels.load(this.value-1);
 			$('#levelselectscreen').hide();
 		});
@@ -147,5 +283,40 @@ var loader={
 			}
 		}
 	},
+}
 
+var mouse={
+	
+	x:0,
+	y:0,
+	down:false,
+	init:function(){
+		$('#gamecanvas').mousemove(mouse.mousemovehandler);
+		$('#gamecanvas').mousedown(mouse.mousedownhandler);
+		$('#gamecanvas').mouseup(mouse.mouseuphandler);
+		$('#gamecanvas').mouseout(mouse.mouseouthandler);
+	},
+	
+	mousemovehandler:function(event){
+		var offset=$('#gamecanvas').offset();
+
+		mouse.x = event.pageX - offset.left;
+		mouse.y = event.pageY - offset.top;
+
+		if(mouse.down){
+			mouse.dragging = true;
+		}
+	},
+
+	mousedownhandler:function(event){
+		mouse.down = true;
+		mouse.downX = mouse.x;
+		mouse.downY = mouse.y;
+		event.originalEvent.preventDefault();
+	},
+
+	mouseuphandler:function(event){
+		mouse.down = false;
+		mouse.dragging = false;
+	},
 }
